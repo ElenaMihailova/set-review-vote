@@ -190,6 +190,15 @@ img { max-width: 100%; }
 #voter-name:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .linkish { font: inherit; font-size: 13px; color: var(--accent); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; }
 @media (max-width: 640px) { .me { justify-items: start; } }
+.done { position: fixed; inset: 0; z-index: 60; background: rgba(6, 8, 12, .7); display: grid; place-items: center;
+  padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+.done-card { background: var(--panel); color: var(--ink); border-radius: 16px; padding: 22px; width: min(420px, 100%); display: grid; gap: 14px; justify-items: center; text-align: center; box-shadow: 0 20px 60px var(--shadow); }
+.done-card h2 { margin: 0; font-size: 24px; text-wrap: balance; }
+.done-card p { margin: 0; color: var(--muted); }
+.done-gif { width: 100%; max-width: 360px; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 12px; background: var(--line); }
+.done-credit { font-size: 11px; color: var(--muted); margin-top: -8px; }
+.done-list { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+@media (prefers-reduced-motion: reduce) { .done-gif { display: none; } }
 </style>
 </head>
 <body>
@@ -202,6 +211,7 @@ img { max-width: 100%; }
   <main id="view"></main>
 </div>
 <div class="lightbox" id="lightbox" hidden></div>
+<div class="done" id="done" hidden role="dialog" aria-modal="true" aria-labelledby="done-title"></div>
 <script>
 const DATA = [{"id":1725,"name":"Hospůdka v Ateliéru","setName":"Warm restaurant dining details","setDate":"2026-11-08","ref":["img/1725-ref-1.jpg","img/1725-ref-2.jpg","img/1725-ref-3.jpg","img/1725-ref-4.jpg","img/1725-ref-5.jpg","img/1725-ref-6.jpg","img/1725-ref-7.jpg","img/1725-ref-8.jpg","img/1725-ref-9.jpg"],"new":["img/1725-new-1.jpg","img/1725-new-2.jpg","img/1725-new-3.jpg","img/1725-new-4.jpg","img/1725-new-5.jpg","img/1725-new-6.jpg","img/1725-new-7.jpg","img/1725-new-8.jpg","img/1725-new-9.jpg"],"plan":{"id":1129,"sent":"2026-10-05","posts":[{"src":"img/1725-prev-42913.jpg","id":42913,"state":"approved","isSet":false,"posted":true},{"src":"img/1725-prev-42171.jpg","id":42171,"state":"approved","isSet":false,"posted":true},{"src":"img/1725-prev-42180.jpg","id":42180,"state":"client_declined","isSet":false,"posted":false},{"src":"img/1725-prev-42190.jpg","id":42190,"state":"approved","isSet":false,"posted":true},{"src":"img/1725-prev-42912.jpg","id":42912,"state":"approved","isSet":false,"posted":true},{"src":"img/1725-prev-42192.jpg","id":42192,"state":"client_declined","isSet":false,"posted":false},{"src":"img/1725-prev-42308.jpg","id":42308,"state":"approved","isSet":false,"posted":true},{"src":"img/1725-prev-42914.jpg","id":42914,"state":"approved","isSet":false,"posted":true}]},"newHd":["img/1725-new-1-hd.jpg","img/1725-new-2-hd.jpg","img/1725-new-3-hd.jpg","img/1725-new-4-hd.jpg","img/1725-new-5-hd.jpg","img/1725-new-6-hd.jpg","img/1725-new-7-hd.jpg","img/1725-new-8-hd.jpg","img/1725-new-9-hd.jpg"]},{"id":964,"name":"Ikasu Sushi","setName":"Red and black restaurant social grid","setDate":"2026-11-09","ref":["img/964-ref-1.jpg","img/964-ref-2.jpg","img/964-ref-3.jpg","img/964-ref-4.jpg","img/964-ref-5.jpg","img/964-ref-6.jpg","img/964-ref-7.jpg","img/964-ref-8.jpg","img/964-ref-9.jpg"],"new":["img/964-new-1.jpg","img/964-new-2.jpg","img/964-new-3.jpg","img/964-new-4.jpg","img/964-new-5.jpg","img/964-new-6.jpg","img/964-new-7.jpg","img/964-new-8.jpg","img/964-new-9.jpg"],"plan":{"id":1234,"sent":"2026-10-27","posts":[{"src":"img/964-prev-44570.jpg","id":44570,"state":"approved","isSet":false,"posted":true},{"src":"img/964-prev-44571.jpg","id":44571,"state":"approved","isSet":false,"posted":true},{"src":"img/964-prev-44572.jpg","id":44572,"state":"approved","isSet":false,"posted":true},{"src":"img/964-prev-44569.jpg","id":44569,"state":"approved","isSet":false,"posted":true},{"src":"img/964-prev-44499.jpg","id":44499,"state":"approved","isSet":false,"posted":true},{"src":"img/964-prev-44881.jpg","id":44881,"state":"approved","isSet":false,"posted":false},{"src":"img/964-prev-44598.jpg","id":44598,"state":"client_declined","isSet":false,"posted":false},{"src":"img/964-prev-44774.jpg","id":44774,"state":"client_declined","isSet":false,"posted":false}]},"newHd":["img/964-new-1-hd.jpg","img/964-new-2-hd.jpg","img/964-new-3-hd.jpg","img/964-new-4-hd.jpg","img/964-new-5-hd.jpg","img/964-new-6-hd.jpg","img/964-new-7-hd.jpg","img/964-new-8-hd.jpg","img/964-new-9-hd.jpg"]},{"id":1693,"name":"Bar Broukarna","setName":"Flash-lit cocktails and dining moments","setDate":"2026-11-09","ref":["img/1693-ref-1.jpg","img/1693-ref-2.jpg","img/1693-ref-3.jpg","img/1693-ref-4.jpg","img/1693-ref-5.jpg","img/1693-ref-6.jpg","img/1693-ref-7.jpg","img/1693-ref-8.jpg","img/1693-ref-9.jpg"],"new":["img/1693-new-1.jpg","img/1693-new-2.jpg","img/1693-new-3.jpg","img/1693-new-4.jpg","img/1693-new-5.jpg","img/1693-new-6.jpg","img/1693-new-7.jpg","img/1693-new-8.jpg","img/1693-new-9.jpg"],"plan":{"id":null,"sent":"2026-11-09","label":"Posting calendar, 29.09.2026–10.11.2026 · last 9 posts","posts":[{"src":"img/1693-cal-40976.jpg","id":40976,"state":"approved","isSet":false,"posted":true},{"src":"img/1693-cal-40370.jpg","id":40370,"state":"approved","isSet":false,"posted":true},{"src":"img/1693-cal-40975.jpg","id":40975,"state":"approved","isSet":false,"posted":true},{"src":"img/1693-cal-42703.jpg","id":42703,"state":"approved","isSet":false,"posted":true},{"src":"img/1693-cal-43956.jpg","id":43956,"state":"approved","isSet":true,"posted":true},{"src":"img/1693-cal-42553.jpg","id":42553,"state":"approved","isSet":false,"posted":true},{"src":"img/1693-cal-42542.jpg","id":42542,"state":"approved","isSet":false,"posted":true},{"src":"img/1693-cal-44582.jpg","id":44582,"state":"approved","isSet":true,"posted":true},{"src":"img/1693-cal-42702.jpg","id":42702,"state":"approved","isSet":false,"posted":false}]},"newHd":["img/1693-new-1-hd.jpg","img/1693-new-2-hd.jpg","img/1693-new-3-hd.jpg","img/1693-new-4-hd.jpg","img/1693-new-5-hd.jpg","img/1693-new-6-hd.jpg","img/1693-new-7-hd.jpg","img/1693-new-8-hd.jpg","img/1693-new-9-hd.jpg"]},{"id":"1693v2","name":"Bar Broukarna · version 2","setName":"Cocktails and hands in dim settings","setDate":"2026-11-05","newLabel":"Current content plan, posts 1–9","ref":["img/1693v2-ref-1.jpg","img/1693v2-ref-2.jpg","img/1693v2-ref-3.jpg","img/1693v2-ref-4.jpg","img/1693v2-ref-5.jpg","img/1693v2-ref-6.jpg","img/1693v2-ref-7.jpg","img/1693v2-ref-8.jpg","img/1693v2-ref-9.jpg"],"new":["img/1693v2-new-45833.jpg","img/1693v2-new-45831.jpg","img/1693v2-new-45841.jpg","img/1693v2-new-45834.jpg","img/1693v2-new-45832.jpg","img/1693v2-new-45844.jpg","img/1693v2-new-45836.jpg","img/1693v2-new-45835.jpg","img/1693v2-new-45653.jpg"],"plan":{"id":null,"sent":"2026-11-09","label":"Posting calendar, 29.09.2026–10.11.2026 · last 9 posts","posts":[{"src":"img/1693-cal-40976.jpg","id":40976,"state":"approved","isSet":false,"posted":true},{"src":"img/1693-cal-40370.jpg","id":40370,"state":"approved","isSet":false,"posted":true},{"src":"img/1693-cal-40975.jpg","id":40975,"state":"approved","isSet":false,"posted":true},{"src":"img/1693-cal-42703.jpg","id":42703,"state":"approved","isSet":false,"posted":true},{"src":"img/1693-cal-43956.jpg","id":43956,"state":"approved","isSet":true,"posted":true},{"src":"img/1693-cal-42553.jpg","id":42553,"state":"approved","isSet":false,"posted":true},{"src":"img/1693-cal-42542.jpg","id":42542,"state":"approved","isSet":false,"posted":true},{"src":"img/1693-cal-44582.jpg","id":44582,"state":"approved","isSet":true,"posted":true},{"src":"img/1693-cal-42702.jpg","id":42702,"state":"approved","isSet":false,"posted":false}]},"newHd":["img/1693v2-new-45833-hd.jpg","img/1693v2-new-45831-hd.jpg","img/1693v2-new-45841-hd.jpg","img/1693v2-new-45834-hd.jpg","img/1693v2-new-45832-hd.jpg","img/1693v2-new-45844-hd.jpg","img/1693v2-new-45836-hd.jpg","img/1693v2-new-45835-hd.jpg","img/1693v2-new-45653-hd.jpg"]},{"id":1754,"name":"Café Botanica Hořice","setName":"Warm restaurant food studies","setDate":"2026-11-09","ref":["img/1754-ref-1.jpg","img/1754-ref-2.jpg","img/1754-ref-3.jpg","img/1754-ref-4.jpg","img/1754-ref-5.jpg","img/1754-ref-6.jpg","img/1754-ref-7.jpg","img/1754-ref-8.jpg","img/1754-ref-9.jpg"],"new":["img/1754-new-1.jpg","img/1754-new-2.jpg","img/1754-new-3.jpg","img/1754-new-4.jpg","img/1754-new-5.jpg","img/1754-new-6.jpg","img/1754-new-7.jpg","img/1754-new-8.jpg","img/1754-new-9.jpg"],"plan":{"id":null,"sent":"2026-10-26","label":"Posting calendar, 19.09.2026–27.10.2026 · last 9 published up to 27.10","posts":[{"src":"img/1754-cal-39711.jpg","id":39711,"state":"approved","isSet":false,"posted":true},{"src":"img/1754-cal-39712.jpg","id":39712,"state":"approved","isSet":false,"posted":true},{"src":"img/1754-cal-40114.jpg","id":40114,"state":"approved","isSet":false,"posted":true},{"src":"img/1754-cal-40318.jpg","id":40318,"state":"approved","isSet":false,"posted":true},{"src":"img/1754-cal-40587.jpg","id":40587,"state":"approved","isSet":false,"posted":true},{"src":"img/1754-cal-40321.jpg","id":40321,"state":"approved","isSet":false,"posted":true},{"src":"img/1754-cal-40465.jpg","id":40465,"state":"approved","isSet":false,"posted":true},{"src":"img/1754-cal-40588.jpg","id":40588,"state":"approved","isSet":false,"posted":true},{"src":"img/1754-cal-40280.jpg","id":40280,"state":"approved","isSet":false,"posted":true}]},"newHd":["img/1754-new-1-hd.jpg","img/1754-new-2-hd.jpg","img/1754-new-3-hd.jpg","img/1754-new-4-hd.jpg","img/1754-new-5-hd.jpg","img/1754-new-6-hd.jpg","img/1754-new-7-hd.jpg","img/1754-new-8-hd.jpg","img/1754-new-9-hd.jpg"]},{"id":1775,"name":"Pizza Bany","setName":"Bold pizza graphics","setDate":"2026-11-09","ref":["img/1775-ref-1.jpg","img/1775-ref-2.jpg","img/1775-ref-3.jpg","img/1775-ref-4.jpg","img/1775-ref-5.jpg","img/1775-ref-6.jpg","img/1775-ref-7.jpg","img/1775-ref-8.jpg","img/1775-ref-9.jpg"],"new":["img/1775-new-1.jpg","img/1775-new-2.jpg","img/1775-new-3.jpg","img/1775-new-4.jpg","img/1775-new-5.jpg","img/1775-new-6.jpg","img/1775-new-7.jpg","img/1775-new-8.jpg","img/1775-new-9.jpg"],"plan":{"id":null,"sent":"2026-10-29","label":"Posting calendar, 22.09.2026–30.10.2026 · last 9 published up to 30.10","posts":[{"src":"img/1775-cal-39769.jpg","id":39769,"state":"approved","isSet":false,"posted":true},{"src":"img/1775-cal-39742.jpg","id":39742,"state":"approved","isSet":false,"posted":true},{"src":"img/1775-cal-42063.jpg","id":42063,"state":"approved","isSet":false,"posted":true},{"src":"img/1775-cal-39988.jpg","id":39988,"state":"approved","isSet":false,"posted":true},{"src":"img/1775-cal-40004.jpg","id":40004,"state":"approved","isSet":false,"posted":true},{"src":"img/1775-cal-42226.jpg","id":42226,"state":"approved","isSet":false,"posted":true},{"src":"img/1775-cal-42065.jpg","id":42065,"state":"approved","isSet":false,"posted":true},{"src":"img/1775-cal-41677.jpg","id":41677,"state":"approved","isSet":false,"posted":true},{"src":"img/1775-cal-44958.jpg","id":44958,"state":"approved","isSet":true,"posted":true}]},"newHd":["img/1775-new-1-hd.jpg","img/1775-new-2-hd.jpg","img/1775-new-3-hd.jpg","img/1775-new-4-hd.jpg","img/1775-new-5-hd.jpg","img/1775-new-6-hd.jpg","img/1775-new-7-hd.jpg","img/1775-new-8-hd.jpg","img/1775-new-9-hd.jpg"]}];
 const SEND = [["yes", "Yes", "good"], ["edits", "With edits", "mid"], ["no", "No", "bad"]];
@@ -358,7 +368,8 @@ function renderDecision(c) {
   }, (a.comment ? "Comment ✓" : "Comment") + (open ? " ▴" : " ▾"));
   const idx = DATA.findIndex(x => x.id === c.id);
   const nextC = DATA[idx + 1];
-  const nextBtn = nextC ? el("button", { class: "next", type: "button", onclick: () => go(nextC.id) }, "Next: " + nextC.name + " →") : null;
+  const nextBtn = nextC ? el("button", { class: "next", type: "button", onclick: () => go(nextC.id) }, "Next: " + nextC.name + " →")
+    : el("button", { class: "next", type: "button", onclick: () => showDone() }, "Finish ✓");
   box.append(el("div", { class: "bar" },
     q("Can we send it to the client?", SEND, "send"),
     q("Is it better than before?", BETTER, "better"),
@@ -402,6 +413,50 @@ function render() {
   $("#view").replaceChildren(renderClient(c));
 }
 
+// End of voting: a thank-you with a GIF when every client is answered, otherwise the clients still left.
+const GIF = "https://media.giphy.com/media/wb9tayBVTQxLU7gHxN/giphy.gif";
+let doneShown = false, doneReturn = null;
+function showDone() {
+  const box = $("#done");
+  const missing = DATA.filter(c => !answered(mine[c.id]));
+  const close = el("button", { class: "next", type: "button", onclick: hideDone }, missing.length ? "Back to voting" : "Close");
+  let card;
+  if (missing.length) {
+    card = el("div", { class: "done-card" },
+      el("h2", { id: "done-title" }, "Almost done"),
+      el("p", {}, missing.length === 1 ? "One client still needs both answers:" : `${missing.length} clients still need both answers:`),
+      el("div", { class: "done-list" }, missing.map(c => el("button", { class: "opt", type: "button", onclick: () => { hideDone(); go(c.id); } }, c.name))),
+      close);
+  } else {
+    doneShown = true;
+    card = el("div", { class: "done-card" },
+      el("img", { class: "done-gif", src: GIF, alt: "Jason Statham smiling" }),
+      el("div", { class: "done-credit" }, "via GIPHY"),
+      el("h2", { id: "done-title" }, "That’s all. Thank you!"),
+      el("p", {}, voterName ? "Your answers are saved. You can come back and change them any time." : "Enter your name at the top so your answers are saved."),
+      close);
+  }
+  doneReturn = document.activeElement;
+  box.replaceChildren(card);
+  box.hidden = false;
+  close.focus({ preventScroll: true });
+}
+function hideDone() {
+  const box = $("#done");
+  if (box.hidden) return;
+  box.hidden = true;
+  if (doneReturn && doneReturn.focus) doneReturn.focus({ preventScroll: true });
+}
+$("#done").addEventListener("click", e => { if (e.target.id === "done") hideDone(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") hideDone(); });
+// Pop the thank-you on its own once the last answer is in, unless a comment for it is still being asked for.
+function maybeDone(cid) {
+  if (doneShown || DATA.some(c => !answered(mine[c.id]))) return;
+  const a = mine[cid] || {};
+  if ((a.send === "edits" || a.send === "no") && !(a.comment || "").trim()) return;
+  showDone();
+}
+
 function setAnswer(cid, patch) {
   const prev = mine[cid] || {};
   mine[cid] = { send: prev.send || null, better: prev.better || null, comment: prev.comment || "", ...patch };
@@ -414,10 +469,10 @@ function setAnswer(cid, patch) {
     if (input) { input.classList.add("need"); input.focus({ preventScroll: true }); input.scrollIntoView({ block: "center", behavior: "smooth" }); }
     return;
   }
-  persist(cid);
+  persist(cid, "send" in patch || "better" in patch);
 }
 
-function persist(cid) {
+function persist(cid, fromChoice = false) {
   setStatus(cid, "Saving…");
   const body = JSON.stringify({ voterId, name: voterName, answers: mine });
   saving = saving.then(async () => {
@@ -426,6 +481,7 @@ function persist(cid) {
     pending = false;
     setStatus(cid, statusText(cid));
     renderTabs();
+    if (fromChoice) maybeDone(cid);  // never interrupt someone typing a comment
   }).catch(() => setStatus(cid, "Not saved. Check your connection and choose your answer again."));
 }
 
