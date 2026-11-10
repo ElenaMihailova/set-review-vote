@@ -414,7 +414,7 @@ function render() {
 }
 
 // End of voting: a thank-you with a GIF when every client is answered, otherwise the clients still left.
-const GIF = "https://media.giphy.com/media/wb9tayBVTQxLU7gHxN/giphy.gif";
+const GIF = "https://media.tenor.com/HokedxL-M18AAAAd/smiling-lee-christmas.gif";
 let doneShown = false, doneReturn = null;
 function showDone() {
   const box = $("#done");
@@ -431,7 +431,7 @@ function showDone() {
     doneShown = true;
     card = el("div", { class: "done-card" },
       el("img", { class: "done-gif", src: GIF, alt: "Jason Statham smiling" }),
-      el("div", { class: "done-credit" }, "via GIPHY"),
+      el("div", { class: "done-credit" }, "via Tenor"),
       el("h2", { id: "done-title" }, "That’s all. Thank you!"),
       el("p", {}, voterName ? "Your answers are saved. You can come back and change them any time." : "Enter your name at the top so your answers are saved."),
       close);
