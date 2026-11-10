@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Set Vote Results</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --bg: #eef0f3; --panel: #ffffff; --ink: #17202b; --muted: #5d6877; --line: #d8dde4;
+  --accent: #2f55c8; --accent-ink: #ffffff;
+  --good: #1f7a4d; --good-soft: #dcf0e5; --warn: #9a6200; --warn-soft: #f8ecd2; --bad: #b3352b; --bad-soft: #f8dfdc;
+  --font-ui: "Golos Text", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #12161c; --panel: #1b2129; --ink: #e7ebf0; --muted: #98a3b2; --line: #2d3540;
+    --accent: #7d9cf5; --accent-ink: #0d1424;
+    --good: #5fc995; --good-soft: #193628; --warn: #e2b154; --warn-soft: #3a2f17; --bad: #f08a80; --bad-soft: #3d1f1c;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-ui); font-size: 15px; line-height: 1.45;
+  padding: 24px max(16px, env(safe-area-inset-right, 0px)) 48px max(16px, env(safe-area-inset-left, 0px)); }
+.wrap { max-width: 1080px; margin: 0 auto; display: grid; gap: 16px; }
+h1 { margin: 0; font-size: 26px; }
+form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+input { font: inherit; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--ink); width: 240px; max-width: 100%; }
+button { font: inherit; font-weight: 600; border: 0; border-radius: 8px; padding: 9px 16px; background: var(--accent); color: var(--accent-ink); cursor: pointer; }
+input:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.msg { color: var(--muted); font-size: 14px; }
+.msg.err { color: var(--bad); }
+section { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: grid; gap: 10px; }
+h2 { margin: 0; font-size: 18px; }
+.counts { font-family: var(--font-mono); font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+td.cm { color: var(--muted); overflow-wrap: anywhere; min-width: 200px; }
+.pill { font-size: 12px; padding: 2px 8px; border-radius: 999px; font-weight: 600; white-space: nowrap; }
+.good { background: var(--good-soft); color: var(--good); }
+.mid { background: var(--warn-soft); color: var(--warn); }
+.bad { background: var(--bad-soft); color: var(--bad); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Set vote results</h1>
+  <form id="f">
+    <label for="key">Results key</label>
+    <input id="key" type="password" autocomplete="current-password">
+    <button type="submit">Show results</button>
+    <span class="msg" id="msg" aria-live="polite"></span>
+  </form>
+  <div id="out" class="wrap"></div>
+</div>
+<script>
+const CLIENTS = [{"id": "1725", "name": "Hospůdka v Ateliéru"}, {"id": "964", "name": "Ikasu Sushi"}, {"id": "1693", "name": "Bar Broukarna"}, {"id": "1693v2", "name": "Bar Broukarna · version 2"}, {"id": "1754", "name": "Café Botanica Hořice"}, {"id": "1775", "name": "Pizza Bany"}];
+const LABEL = { yes: ["Yes", "good"], edits: ["With edits", "mid"], no: ["No", "bad"], better: ["Better", "good"], same: ["Same", "mid"], worse: ["Worse", "bad"] };
+const el = (tag, attrs = {}, ...kids) => {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+  for (const k of kids.flat()) if (k != null) n.append(k.nodeType ? k : document.createTextNode(String(k)));
+  return n;
+};
+const pill = v => LABEL[v] ? el("span", { class: "pill " + LABEL[v][1] }, LABEL[v][0]) : "—";
+const keyInput = document.getElementById("key"), msg = document.getElementById("msg"), out = document.getElementById("out");
+try { keyInput.value = sessionStorage.getItem("setReview.resultsKey") || ""; } catch (e) {}
+
+async function load() {
+  msg.className = "msg"; msg.textContent = "Loading…";
+  const res = await fetch("/api/results", { headers: { "x-results-key": keyInput.value } }).catch(() => null);
+  if (!res) { msg.className = "msg err"; msg.textContent = "Network error. Try again."; return; }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) { msg.className = "msg err"; msg.textContent = data.error || "Could not load results."; return; }
+  try { sessionStorage.setItem("setReview.resultsKey", keyInput.value); } catch (e) {}
+  const votes = data.votes || [];
+  msg.textContent = votes.length + (votes.length === 1 ? " voter" : " voters") + " · loaded " + new Date().toLocaleTimeString();
+  out.replaceChildren(...CLIENTS.map(c => {
+    const rows = votes.map(v => ({ name: v.name, a: (v.answers || {})[c.id] })).filter(x => x.a && (x.a.send || x.a.better || x.a.comment));
+    const n = (k, val) => rows.filter(r => r.a[k] === val).length;
+    return el("section", {},
+      el("h2", {}, c.name),
+      el("div", { class: "counts" }, `Send: yes ${n("send", "yes")} · with edits ${n("send", "edits")} · no ${n("send", "no")}  |  Better ${n("better", "better")} · same ${n("better", "same")} · worse ${n("better", "worse")}`),
+      rows.length
+        ? el("div", { class: "tablewrap" }, el("table", {},
+            el("thead", {}, el("tr", {}, el("th", {}, "Voter"), el("th", {}, "Send"), el("th", {}, "Better"), el("th", {}, "Comment"))),
+            el("tbody", {}, rows.map(r => el("tr", {}, el("td", {}, r.name), el("td", {}, pill(r.a.send)), el("td", {}, pill(r.a.better)), el("td", { class: "cm" }, r.a.comment || ""))))))
+        : el("div", { class: "msg" }, "No answers yet."));
+  }));
+}
+document.getElementById("f").addEventListener("submit", e => { e.preventDefault(); load(); });
+if (keyInput.value) load();
+</script>
+</body>
+</html>

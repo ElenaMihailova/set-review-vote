@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Sets: Before and After</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one client per view — reference | previous plan | new set, decision bar underneath; tabs carry vote counts */
+:root {
+  --bg: #eef0f3;
+  --panel: #ffffff;
+  --ink: #17202b;
+  --muted: #5d6877;
+  --line: #d8dde4;
+  --accent: #2f55c8;
+  --accent-ink: #ffffff;
+  --accent-soft: #e3e9fa;
+  --good: #1f7a4d;
+  --good-soft: #dcf0e5;
+  --warn: #9a6200;
+  --warn-soft: #f8ecd2;
+  --bad: #b3352b;
+  --bad-soft: #f8dfdc;
+  --chip-bg: rgba(15, 20, 28, .78);
+  --chip-ink: #ffffff;
+  --shadow: rgba(15, 20, 28, .16);
+  --font-ui: "Golos Text", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12161c; --panel: #1b2129; --ink: #e7ebf0; --muted: #98a3b2; --line: #2d3540;
+    --accent: #7d9cf5; --accent-ink: #0d1424; --accent-soft: #24304d;
+    --good: #5fc995; --good-soft: #193628; --warn: #e2b154; --warn-soft: #3a2f17; --bad: #f08a80; --bad-soft: #3d1f1c;
+    --chip-bg: rgba(8, 10, 14, .82); --chip-ink: #ffffff; --shadow: rgba(0, 0, 0, .55);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12161c; --panel: #1b2129; --ink: #e7ebf0; --muted: #98a3b2; --line: #2d3540;
+  --accent: #7d9cf5; --accent-ink: #0d1424; --accent-soft: #24304d;
+  --good: #5fc995; --good-soft: #193628; --warn: #e2b154; --warn-soft: #3a2f17; --bad: #f08a80; --bad-soft: #3d1f1c;
+  --chip-bg: rgba(8, 10, 14, .82); --chip-ink: #ffffff; --shadow: rgba(0, 0, 0, .55);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-ui); font-size: 15px; line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 48px;
+}
+.wrap { max-width: 1080px; width: 100%; margin: 0 auto; display: grid; gap: 18px; }
+header.top { display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: end; justify-content: space-between; }
+h1 { font-size: 26px; font-weight: 700; margin: 0; letter-spacing: -.01em; text-wrap: balance; }
+.lede { margin: 4px 0 0; color: var(--muted); max-width: 70ch; }
+.me { font-size: 13px; color: var(--muted); }
+.me b { color: var(--ink); font-weight: 600; }
+
+nav.tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.tab {
+  flex: 0 0 auto; display: grid; gap: 2px; text-align: left; cursor: pointer;
+  border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 10px; padding: 8px 12px; font: inherit;
+}
+.tab .n { font-weight: 600; font-size: 14px; }
+.tab .s { font-size: 12px; color: var(--muted); font-family: var(--font-mono); }
+.tab.done .s::before { content: "● "; color: var(--good); }
+.tab[aria-selected="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.tab:focus-visible, button:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.client-head { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: baseline; }
+.client-head h2 { margin: 0; font-size: 22px; font-weight: 700; }
+.client-head .meta { color: var(--muted); font-family: var(--font-mono); font-size: 12.5px; }
+
+.cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: start; }
+.col.ref-small { max-width: 340px; }
+.col { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: grid; gap: 10px; min-width: 0; }
+.col h3 { margin: 0; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.col .sub { margin: -6px 0 0; font-size: 12.5px; color: var(--muted); }
+.col.new { border-color: var(--accent); }
+.col.new h3 { color: var(--accent); }
+.note { font-size: 12.5px; background: var(--warn-soft); color: var(--warn); border-radius: 8px; padding: 6px 8px; }
+
+.ref img { width: 100%; height: auto; border-radius: 6px; display: block; cursor: zoom-in; }
+.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3px; }
+.cell { position: relative; aspect-ratio: 3 / 4; background: var(--line); overflow: hidden; cursor: zoom-in; border: 0; padding: 0; }
+.cell img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cell.dim img { opacity: .55; }
+.chips { position: absolute; left: 4px; bottom: 4px; display: flex; flex-wrap: wrap; gap: 3px; }
+.chip { font-size: 10.5px; line-height: 1; padding: 3px 5px; border-radius: 4px; background: var(--chip-bg); color: var(--chip-ink); font-weight: 500; }
+.chip.ok::before { content: "✓ "; color: #7be0a8; }
+.chip.no::before { content: "✕ "; color: #ff9a90; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--muted); }
+
+/* Decision bar stays pinned to the bottom of the screen while the grids scroll past */
+.decide {
+  position: sticky; bottom: 0; z-index: 5; display: grid; gap: 8px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+  padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 -10px 28px var(--shadow);
+}
+.bar { display: grid; grid-template-columns: auto auto minmax(0, 1fr); gap: 10px 28px; align-items: end; }
+.bar-end { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; align-items: center; }
+.q { display: grid; gap: 6px; min-width: 0; }
+.q .label { font-weight: 600; font-size: 13.5px; }
+.opts { display: flex; flex-wrap: wrap; gap: 6px; }
+.opt {
+  font: inherit; font-size: 14px; cursor: pointer; padding: 7px 13px; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+}
+.opt:hover { border-color: var(--muted); }
+.opt[aria-pressed="true"].good { background: var(--good-soft); border-color: var(--good); color: var(--good); font-weight: 600; }
+.opt[aria-pressed="true"].mid { background: var(--warn-soft); border-color: var(--warn); color: var(--warn); font-weight: 600; }
+.opt[aria-pressed="true"].bad { background: var(--bad-soft); border-color: var(--bad); color: var(--bad); font-weight: 600; }
+.opt:disabled { cursor: not-allowed; opacity: .55; }
+textarea {
+  width: 100%; min-height: 56px; resize: vertical; font: inherit; font-size: 14px; color: var(--ink);
+  background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px;
+}
+.row { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; }
+.status { font-size: 12.5px; color: var(--muted); }
+.next { font: inherit; font-weight: 600; cursor: pointer; border: 0; border-radius: 8px; padding: 9px 16px; background: var(--accent); color: var(--accent-ink); }
+
+.others { display: grid; gap: 8px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+.others h4 { margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+.vote { display: grid; grid-template-columns: minmax(110px, 180px) minmax(0, 1fr); gap: 2px 12px; font-size: 14px; }
+.vote .who { font-weight: 600; }
+.vote .what { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-width: 0; }
+.vote .cm { grid-column: 2; color: var(--muted); overflow-wrap: anywhere; }
+.pill { font-size: 12px; padding: 2px 8px; border-radius: 999px; font-weight: 600; }
+.pill.good { background: var(--good-soft); color: var(--good); }
+.pill.mid { background: var(--warn-soft); color: var(--warn); }
+.pill.bad { background: var(--bad-soft); color: var(--bad); }
+.hint { font-size: 13px; color: var(--muted); margin: 0; }
+.warn { margin-top: 4px; font-size: 12.5px; color: var(--warn); background: var(--warn-soft); border-radius: 6px; padding: 4px 8px; max-width: 46ch; }
+
+.summary { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: grid; gap: 10px; }
+.summary h2 { margin: 0; font-size: 18px; }
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
+td.num { font-family: var(--font-mono); white-space: nowrap; }
+.banner { font-size: 13.5px; padding: 10px 12px; border-radius: 10px; background: var(--accent-soft); color: var(--ink); }
+
+.lightbox { position: fixed; inset: 0; z-index: 50; background: rgba(6, 8, 12, .9); display: grid; place-items: center; padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); cursor: zoom-out; }
+.lightbox.scroll { place-items: start center; overflow-y: auto; padding-top: max(52px, calc(env(safe-area-inset-top, 0px) + 44px)); }
+.lightbox.scroll .lb-title, .lightbox.scroll .lb-close { z-index: 2; }
+.lightbox > img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 6px; }
+.lb-box { display: grid; gap: 8px; justify-items: center; max-width: 100%; max-height: 100%; }
+.lb-cap { color: #ffffff; font-size: 14px; font-weight: 600; }
+.lb-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3px; max-width: 100%; }
+.lb-grid img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; display: block; }
+.lb-cap.accent { color: #a9bdff; }
+.lb-title { position: fixed; top: max(14px, env(safe-area-inset-top, 0px)); left: max(16px, env(safe-area-inset-left, 0px)); color: #ffffff; font-size: 15px; font-weight: 600; }
+.lb-close {
+  position: fixed; top: max(8px, env(safe-area-inset-top, 0px)); right: max(10px, env(safe-area-inset-right, 0px));
+  font: inherit; font-size: 14px; color: #ffffff; background: rgba(255, 255, 255, .12); border: 1px solid rgba(255, 255, 255, .25);
+  border-radius: 8px; padding: 7px 12px; cursor: pointer;
+}
+.lb-close:focus-visible { outline: 2px solid #a9bdff; outline-offset: 2px; }
+.lb-pair { display: flex; gap: 28px; align-items: flex-start; justify-content: center; max-width: 100%; }
+.lb-pair.stack { flex-direction: column; align-items: center; gap: 12px; }
+.col-head { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; justify-content: space-between; }
+.grid-zoom:hover { border-color: var(--accent); color: var(--accent); }
+.grid-zoom { font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 6px; padding: 5px 10px; }
+
+@media (max-width: 900px) {
+  .bar { grid-template-columns: auto auto; }
+  .bar-end { grid-column: 1 / -1; justify-content: space-between; }
+}
+@media (max-width: 760px) {
+  .cols, .bar { grid-template-columns: minmax(0, 1fr); }
+  .decide { position: static; box-shadow: none; }
+  .vote { grid-template-columns: minmax(0, 1fr); }
+  .vote .cm { grid-column: 1; }
+}
+
+:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+img { max-width: 100%; }
+[hidden] { display: none !important; }
+.me { display: grid; gap: 4px; justify-items: end; }
+.name-label { font-size: 12.5px; color: var(--muted); }
+.name-row { display: flex; gap: 6px; }
+#voter-name { font: inherit; font-size: 14px; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; width: 200px; max-width: 60vw; }
+#voter-name.need { border-color: var(--warn); box-shadow: 0 0 0 3px var(--warn-soft); }
+#voter-name:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.linkish { font: inherit; font-size: 13px; color: var(--accent); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; }
+@media (max-width: 640px) { .me { justify-items: start; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>Sets: before and after</h1>
+    <div class="me" id="me"></div>
+  </header>
+  <nav class="tabs" id="tabs" role="tablist" aria-label="Clients"></nav>
+  <main id="view"></main>
+</div>
+<div class="lightbox" id="lightbox" hidden></div>
+<script>
+const DATA = [{"id":1725,"name":"Hospůdka v Ateliéru","setName":"Warm restaurant dining details","setDate":"2026-11-08","ref":["img/1725-ref-1.jpg","img/1725-ref-2.jpg","img/1725-ref-3.jpg","img/1725-ref-4.jpg","img/1725-ref-5.jpg","img/1725-ref-6.jpg","img/1725-ref-7.jpg","img/1725-ref-8.jpg","img/1725-ref-9.jpg"],"new":["img/1725-new-1.jpg","img/1725-new-2.jpg","img/1725-new-3.jpg","img/1725-new-4.jpg","img/1725-new-5.jpg","img/1725-new-6.jpg","img/1725-new-7.jpg","img/1725-new-8.jpg","img/1725-new-9.jpg"],"plan":{"id":1129,"sent":"2026-10-05","posts":[{"src":"img/1725-prev-42913.jpg","id":42913,"state":"approved","isSet":false,"posted":true},{"src":"img/1725-prev-42171.jpg","id":42171,"state":"approved","isSet":false,"posted":true},{"src":"img/1725-prev-42180.jpg","id":42180,"state":"client_declined","isSet":false,"posted":false},{"src":"img/1725-prev-42190.jpg","id":42190,"state":"approved","isSet":false,"posted":true},{"src":"img/1725-prev-42912.jpg","id":42912,"state":"approved","isSet":false,"posted":true},{"src":"img/1725-prev-42192.jpg","id":42192,"state":"client_declined","isSet":false,"posted":false},{"src":"img/1725-prev-42308.jpg","id":42308,"state":"approved","isSet":false,"posted":true},{"src":"img/1725-prev-42914.jpg","id":42914,"state":"approved","isSet":false,"posted":true}]},"newHd":["img/1725-new-1-hd.jpg","img/1725-new-2-hd.jpg","img/1725-new-3-hd.jpg","img/1725-new-4-hd.jpg","img/1725-new-5-hd.jpg","img/1725-new-6-hd.jpg","img/1725-new-7-hd.jpg","img/1725-new-8-hd.jpg","img/1725-new-9-hd.jpg"]},{"id":964,"name":"Ikasu Sushi","setName":"Red and black restaurant social grid","setDate":"2026-11-09","ref":["img/964-ref-1.jpg","img/964-ref-2.jpg","img/964-ref-3.jpg","img/964-ref-4.jpg","img/964-ref-5.jpg","img/964-ref-6.jpg","img/964-ref-7.jpg","img/964-ref-8.jpg","img/964-ref-9.jpg"],"new":["img/964-new-1.jpg","img/964-new-2.jpg","img/964-new-3.jpg","img/964-new-4.jpg","img/964-new-5.jpg","img/964-new-6.jpg","img/964-new-7.jpg","img/964-new-8.jpg","img/964-new-9.jpg"],"plan":{"id":1234,"sent":"2026-10-27","posts":[{"src":"img/964-prev-44570.jpg","id":44570,"state":"approved","isSet":false,"posted":true},{"src":"img/964-prev-44571.jpg","id":44571,"state":"approved","isSet":false,"posted":true},{"src":"img/964-prev-44572.jpg","id":44572,"state":"approved","isSet":false,"posted":true},{"src":"img/964-prev-44569.jpg","id":44569,"state":"approved","isSet":false,"posted":true},{"src":"img/964-prev-44499.jpg","id":44499,"state":"approved","isSet":false,"posted":true},{"src":"img/964-prev-44881.jpg","id":44881,"state":"approved","isSet":false,"posted":false},{"src":"img/964-prev-44598.jpg","id":44598,"state":"client_declined","isSet":false,"posted":false},{"src":"img/964-prev-44774.jpg","id":44774,"state":"client_declined","isSet":false,"posted":false}]},"newHd":["img/964-new-1-hd.jpg","img/964-new-2-hd.jpg","img/964-new-3-hd.jpg","img/964-new-4-hd.jpg","img/964-new-5-hd.jpg","img/964-new-6-hd.jpg","img/964-new-7-hd.jpg","img/964-new-8-hd.jpg","img/964-new-9-hd.jpg"]},{"id":1693,"name":"Bar Broukarna","setName":"Flash-lit cocktails and dining moments","setDate":"2026-11-09","ref":["img/1693-ref-1.jpg","img/1693-ref-2.jpg","img/1693-ref-3.jpg","img/1693-ref-4.jpg","img/1693-ref-5.jpg","img/1693-ref-6.jpg","img/1693-ref-7.jpg","img/1693-ref-8.jpg","img/1693-ref-9.jpg"],"new":["img/1693-new-1.jpg","img/1693-new-2.jpg","img/1693-new-3.jpg","img/1693-new-4.jpg","img/1693-new-5.jpg","img/1693-new-6.jpg","img/1693-new-7.jpg","img/1693-new-8.jpg","img/1693-new-9.jpg"],"plan":{"id":null,"sent":"2026-11-09","label":"Posting calendar, 29.09.2026–10.11.2026 · last 9 posts","posts":[{"src":"img/1693-cal-40976.jpg","id":40976,"state":"approved","isSet":false,"posted":true},{"src":"img/1693-cal-40370.jpg","id":40370,"state":"approved","isSet":false,"posted":true},{"src":"img/1693-cal-40975.jpg","id":40975,"state":"approved","isSet":false,"posted":true},{"src":"img/1693-cal-42703.jpg","id":42703,"state":"approved","isSet":false,"posted":true},{"src":"img/1693-cal-43956.jpg","id":43956,"state":"approved","isSet":true,"posted":true},{"src":"img/1693-cal-42553.jpg","id":42553,"state":"approved","isSet":false,"posted":true},{"src":"img/1693-cal-42542.jpg","id":42542,"state":"approved","isSet":false,"posted":true},{"src":"img/1693-cal-44582.jpg","id":44582,"state":"approved","isSet":true,"posted":true},{"src":"img/1693-cal-42702.jpg","id":42702,"state":"approved","isSet":false,"posted":false}]},"newHd":["img/1693-new-1-hd.jpg","img/1693-new-2-hd.jpg","img/1693-new-3-hd.jpg","img/1693-new-4-hd.jpg","img/1693-new-5-hd.jpg","img/1693-new-6-hd.jpg","img/1693-new-7-hd.jpg","img/1693-new-8-hd.jpg","img/1693-new-9-hd.jpg"]},{"id":"1693v2","name":"Bar Broukarna · version 2","setName":"Cocktails and hands in dim settings","setDate":"2026-11-05","newLabel":"Current content plan, posts 1–9","ref":["img/1693v2-ref-1.jpg","img/1693v2-ref-2.jpg","img/1693v2-ref-3.jpg","img/1693v2-ref-4.jpg","img/1693v2-ref-5.jpg","img/1693v2-ref-6.jpg","img/1693v2-ref-7.jpg","img/1693v2-ref-8.jpg","img/1693v2-ref-9.jpg"],"new":["img/1693v2-new-45833.jpg","img/1693v2-new-45831.jpg","img/1693v2-new-45841.jpg","img/1693v2-new-45834.jpg","img/1693v2-new-45832.jpg","img/1693v2-new-45844.jpg","img/1693v2-new-45836.jpg","img/1693v2-new-45835.jpg","img/1693v2-new-45653.jpg"],"plan":{"id":null,"sent":"2026-11-09","label":"Posting calendar, 29.09.2026–10.11.2026 · last 9 posts","posts":[{"src":"img/1693-cal-40976.jpg","id":40976,"state":"approved","isSet":false,"posted":true},{"src":"img/1693-cal-40370.jpg","id":40370,"state":"approved","isSet":false,"posted":true},{"src":"img/1693-cal-40975.jpg","id":40975,"state":"approved","isSet":false,"posted":true},{"src":"img/1693-cal-42703.jpg","id":42703,"state":"approved","isSet":false,"posted":true},{"src":"img/1693-cal-43956.jpg","id":43956,"state":"approved","isSet":true,"posted":true},{"src":"img/1693-cal-42553.jpg","id":42553,"state":"approved","isSet":false,"posted":true},{"src":"img/1693-cal-42542.jpg","id":42542,"state":"approved","isSet":false,"posted":true},{"src":"img/1693-cal-44582.jpg","id":44582,"state":"approved","isSet":true,"posted":true},{"src":"img/1693-cal-42702.jpg","id":42702,"state":"approved","isSet":false,"posted":false}]},"newHd":["img/1693v2-new-45833-hd.jpg","img/1693v2-new-45831-hd.jpg","img/1693v2-new-45841-hd.jpg","img/1693v2-new-45834-hd.jpg","img/1693v2-new-45832-hd.jpg","img/1693v2-new-45844-hd.jpg","img/1693v2-new-45836-hd.jpg","img/1693v2-new-45835-hd.jpg","img/1693v2-new-45653-hd.jpg"]},{"id":1754,"name":"Café Botanica Hořice","setName":"Warm restaurant food studies","setDate":"2026-11-09","ref":["img/1754-ref-1.jpg","img/1754-ref-2.jpg","img/1754-ref-3.jpg","img/1754-ref-4.jpg","img/1754-ref-5.jpg","img/1754-ref-6.jpg","img/1754-ref-7.jpg","img/1754-ref-8.jpg","img/1754-ref-9.jpg"],"new":["img/1754-new-1.jpg","img/1754-new-2.jpg","img/1754-new-3.jpg","img/1754-new-4.jpg","img/1754-new-5.jpg","img/1754-new-6.jpg","img/1754-new-7.jpg","img/1754-new-8.jpg","img/1754-new-9.jpg"],"plan":{"id":null,"sent":"2026-10-26","label":"Posting calendar, 19.09.2026–27.10.2026 · last 9 published up to 27.10","posts":[{"src":"img/1754-cal-39711.jpg","id":39711,"state":"approved","isSet":false,"posted":true},{"src":"img/1754-cal-39712.jpg","id":39712,"state":"approved","isSet":false,"posted":true},{"src":"img/1754-cal-40114.jpg","id":40114,"state":"approved","isSet":false,"posted":true},{"src":"img/1754-cal-40318.jpg","id":40318,"state":"approved","isSet":false,"posted":true},{"src":"img/1754-cal-40587.jpg","id":40587,"state":"approved","isSet":false,"posted":true},{"src":"img/1754-cal-40321.jpg","id":40321,"state":"approved","isSet":false,"posted":true},{"src":"img/1754-cal-40465.jpg","id":40465,"state":"approved","isSet":false,"posted":true},{"src":"img/1754-cal-40588.jpg","id":40588,"state":"approved","isSet":false,"posted":true},{"src":"img/1754-cal-40280.jpg","id":40280,"state":"approved","isSet":false,"posted":true}]},"newHd":["img/1754-new-1-hd.jpg","img/1754-new-2-hd.jpg","img/1754-new-3-hd.jpg","img/1754-new-4-hd.jpg","img/1754-new-5-hd.jpg","img/1754-new-6-hd.jpg","img/1754-new-7-hd.jpg","img/1754-new-8-hd.jpg","img/1754-new-9-hd.jpg"]},{"id":1775,"name":"Pizza Bany","setName":"Bold pizza graphics","setDate":"2026-11-09","ref":["img/1775-ref-1.jpg","img/1775-ref-2.jpg","img/1775-ref-3.jpg","img/1775-ref-4.jpg","img/1775-ref-5.jpg","img/1775-ref-6.jpg","img/1775-ref-7.jpg","img/1775-ref-8.jpg","img/1775-ref-9.jpg"],"new":["img/1775-new-1.jpg","img/1775-new-2.jpg","img/1775-new-3.jpg","img/1775-new-4.jpg","img/1775-new-5.jpg","img/1775-new-6.jpg","img/1775-new-7.jpg","img/1775-new-8.jpg","img/1775-new-9.jpg"],"plan":{"id":null,"sent":"2026-10-29","label":"Posting calendar, 22.09.2026–30.10.2026 · last 9 published up to 30.10","posts":[{"src":"img/1775-cal-39769.jpg","id":39769,"state":"approved","isSet":false,"posted":true},{"src":"img/1775-cal-39742.jpg","id":39742,"state":"approved","isSet":false,"posted":true},{"src":"img/1775-cal-42063.jpg","id":42063,"state":"approved","isSet":false,"posted":true},{"src":"img/1775-cal-39988.jpg","id":39988,"state":"approved","isSet":false,"posted":true},{"src":"img/1775-cal-40004.jpg","id":40004,"state":"approved","isSet":false,"posted":true},{"src":"img/1775-cal-42226.jpg","id":42226,"state":"approved","isSet":false,"posted":true},{"src":"img/1775-cal-42065.jpg","id":42065,"state":"approved","isSet":false,"posted":true},{"src":"img/1775-cal-41677.jpg","id":41677,"state":"approved","isSet":false,"posted":true},{"src":"img/1775-cal-44958.jpg","id":44958,"state":"approved","isSet":true,"posted":true}]},"newHd":["img/1775-new-1-hd.jpg","img/1775-new-2-hd.jpg","img/1775-new-3-hd.jpg","img/1775-new-4-hd.jpg","img/1775-new-5-hd.jpg","img/1775-new-6-hd.jpg","img/1775-new-7-hd.jpg","img/1775-new-8-hd.jpg","img/1775-new-9-hd.jpg"]}];
+const SEND = [["yes", "Yes", "good"], ["edits", "With edits", "mid"], ["no", "No", "bad"]];
+const BETTER = [["better", "Better", "good"], ["same", "Same", "mid"], ["worse", "Worse", "bad"]];
+
+let current = null;
+let mine = {};               // my answers: { [clientId]: {send, better, comment} }
+let pending = false;         // answers chosen before a name was entered, not yet saved
+let saving = Promise.resolve();
+let commentTimer = null;
+const commentOpen = new Set();  // clients whose comment field is expanded
+let focusComment = null;
+
+const $ = (sel, el = document) => el.querySelector(sel);
+const el = (tag, attrs = {}, ...kids) => {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (v == null || v === false) continue;
+    if (k === "class") n.className = v; else if (k.startsWith("on")) n.addEventListener(k.slice(2), v); else n.setAttribute(k, v === true ? "" : v);
+  }
+  for (const k of kids.flat()) if (k != null) n.append(k.nodeType ? k : document.createTextNode(String(k)));
+  return n;
+};
+const answered = a => a && a.send && a.better;
+
+// Who is voting: a random id and a typed name, remembered in this browser.
+const store = {
+  get(k) { try { return localStorage.getItem(k) || ""; } catch (e) { return ""; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+};
+const newId = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 12));
+let voterId = store.get("setReview.voterId");
+if (!/^[A-Za-z0-9-]{8,64}$/.test(voterId)) { voterId = newId(); store.set("setReview.voterId", voterId); }
+let voterName = store.get("setReview.name");
+
+let lbReturn = null;
+function showOverlay(title, content) {
+  lbReturn = document.activeElement;
+  const close = el("button", { class: "lb-close", type: "button", onclick: closeOverlay }, "Close ✕");
+  $("#lightbox").replaceChildren(el("div", { class: "lb-title" }, title), close, content);
+  $("#lightbox").hidden = false;
+  close.focus({ preventScroll: true });
+}
+function closeOverlay() {
+  if ($("#lightbox").hidden) return;
+  $("#lightbox").hidden = true;
+  if (lbReturn && lbReturn.focus) lbReturn.focus({ preventScroll: true });
+}
+const lbGrid = (srcs, width) => el("div", { class: "lb-grid", style: `width: ${width}` }, srcs.map(src => el("img", { src, alt: "" })));
+// One grid on the whole screen (the reference): all rows fit the viewport height.
+function openGrid(srcs, title) {
+  const rows = Math.ceil(srcs.length / 3);
+  $("#lightbox").classList.remove("scroll");
+  showOverlay(title, lbGrid(srcs, `min(calc(100vw - 32px), calc((100vh - 96px) * 9 / ${4 * rows}))`));
+}
+// Detailed look at the new set: as wide as the screen allows, scrolling down, high-resolution images.
+function openDetail(c) {
+  $("#lightbox").classList.add("scroll");
+  showOverlay(c.name + " · after", lbGrid(c.newHd || c.new, "min(calc(100vw - 32px), 1200px)"));
+  $("#lightbox").scrollTop = 0;
+}
+// Before and after side by side at the same tile size; stacked on narrow screens.
+function openCompare(c) {
+  const rows = Math.max(Math.ceil(c.plan.posts.length / 3), Math.ceil(c.new.length / 3));
+  $("#lightbox").classList.remove("scroll");
+  const narrow = window.innerWidth < 700;
+  const width = narrow
+    ? `min(calc(100vw - 32px), calc((100vh - 150px) / 2 * 9 / ${4 * rows}))`
+    : `min(calc((100vw - 60px) / 2), calc((100vh - 110px) * 9 / ${4 * rows}))`;
+  const side = (cap, srcs, accent) => el("div", { class: "lb-box" }, el("div", { class: "lb-cap" + (accent ? " accent" : "") }, cap), lbGrid(srcs, width));
+  showOverlay(c.name, el("div", { class: "lb-pair" + (narrow ? " stack" : "") },
+    side("Before", c.plan.posts.map(p => p.src)), side("After", c.new, true)));
+}
+$("#lightbox").addEventListener("click", e => { if (!e.target.closest(".lb-close")) closeOverlay(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeOverlay(); });
+
+function renderName() {
+  const box = $("#me");
+  if (voterName) {
+    box.replaceChildren("Voting as ", el("b", {}, voterName), " ",
+      el("button", { class: "linkish", type: "button", onclick: () => { voterName = ""; renderName(); $("#voter-name")?.focus(); } }, "change"));
+    return;
+  }
+  const input = el("input", { id: "voter-name", type: "text", maxlength: "60", autocomplete: "name", placeholder: "Your name" });
+  const save = () => {
+    const v = input.value.trim();
+    if (!v) { input.focus(); return; }
+    voterName = v; store.set("setReview.name", v);
+    renderName();
+    if (pending || Object.keys(mine).length) persist(current);
+  };
+  input.addEventListener("keydown", e => { if (e.key === "Enter") save(); });
+  box.replaceChildren(el("label", { for: "voter-name", class: "name-label" }, "Your name"), el("span", { class: "name-row" }, input,
+    el("button", { class: "next", type: "button", onclick: save }, "Save")));
+}
+
+function renderTabs() {
+  const nav = $("#tabs"); nav.replaceChildren();
+  for (const c of DATA) {
+    nav.append(el("button", {
+      class: "tab" + (answered(mine[c.id]) ? " done" : ""), role: "tab", "aria-selected": String(current === c.id),
+      onclick: () => go(c.id)
+    }, el("span", { class: "n" }, c.name), el("span", { class: "s" }, answered(mine[c.id]) ? "answered" : "no answer yet")));
+  }
+}
+
+function cellFor(src, alt, onOpen) {
+  return el("button", { class: "cell", type: "button", "aria-label": "Open full screen", onclick: onOpen }, el("img", { src, alt, loading: "lazy" }));
+}
+
+function renderClient(c) {
+  const openBoth = () => openCompare(c);
+  const openRef = () => openGrid(c.ref, c.name + " · reference");
+  const ref = el("section", { class: "col ref-small" },
+    el("h3", {}, "Set reference"),
+    el("div", { class: "grid" }, c.ref.map((src, i) => cellFor(src, "Reference " + (i + 1), openRef))));
+  const prev = el("section", { class: "col" },
+    el("h3", {}, "Before: previous content"),
+    el("p", { class: "sub" }, c.plan.label || `Content plan #${c.plan.id}, sent ${fmtDate(c.plan.sent)} · ${c.plan.posts.length} posts`),
+    el("div", { class: "grid" }, c.plan.posts.map(p => cellFor(p.src, "Post " + p.id, openBoth))));
+  const next = el("section", { class: "col new" },
+    el("div", { class: "col-head" }, el("h3", {}, "After: new set"),
+      el("button", { class: "grid-zoom", type: "button", onclick: () => openDetail(c) }, "View in detail")),
+    el("p", { class: "sub" }, c.newLabel || `“${c.setName}”, created ${fmtDate(c.setDate)}`),
+    el("div", { class: "grid" }, c.new.map((src, i) => cellFor(src, "New post " + (i + 1), openBoth))));
+  return el("div", { class: "wrap", style: "gap:14px" },
+    el("div", { class: "client-head" }, el("h2", {}, c.name)),
+    el("div", { class: "cols" }, prev, next),
+    renderDecision(c),
+    ref);
+}
+
+function renderDecision(c) {
+  const a = mine[c.id] || {};
+  const open = commentOpen.has(c.id);
+  const box = el("section", { class: "decide", "aria-label": "Decision for this client" });
+  const q = (title, list, key) => el("div", { class: "q" },
+    el("div", { class: "label" }, title),
+    el("div", { class: "opts" }, list.map(([v, t, tone]) => el("button", {
+      type: "button", class: "opt " + tone, "aria-pressed": String(a[key] === v),
+      onclick: () => {
+        const val = a[key] === v ? null : v;
+        // A "with edits" or "no" answer is only useful with a note, so open the comment right away.
+        if (key === "send" && (val === "edits" || val === "no") && !(a.comment || "").trim()) { commentOpen.add(c.id); focusComment = c.id; }
+        setAnswer(c.id, { [key]: val });
+      }
+    }, t))));
+  const toggle = el("button", {
+    type: "button", class: "opt", "aria-expanded": String(open), "aria-controls": "comment-" + c.id,
+    onclick: () => {
+      if (open) commentOpen.delete(c.id); else { commentOpen.add(c.id); focusComment = c.id; }
+      box.replaceWith(renderDecision(c));
+    }
+  }, (a.comment ? "Comment ✓" : "Comment") + (open ? " ▴" : " ▾"));
+  const idx = DATA.findIndex(x => x.id === c.id);
+  const nextC = DATA[idx + 1];
+  const nextBtn = nextC ? el("button", { class: "next", type: "button", onclick: () => go(nextC.id) }, "Next: " + nextC.name + " →") : null;
+  box.append(el("div", { class: "bar" },
+    q("Can we send it to the client?", SEND, "send"),
+    q("Is it better than before?", BETTER, "better"),
+    el("div", { class: "bar-end" }, toggle, nextBtn)));
+  if (open) {
+    const needsNote = a.send === "edits" || a.send === "no";
+    const ta = el("textarea", { id: "comment-" + c.id, rows: "2",
+      placeholder: needsNote ? "What to fix, or why not: which images to remove or replace" : "Comment (optional)" });
+    ta.value = a.comment || "";
+    ta.addEventListener("input", () => {
+      clearTimeout(commentTimer);
+      setStatus(c.id, "Saving…");
+      commentTimer = setTimeout(() => { commentTimer = null; setAnswer(c.id, { comment: ta.value.trim() }); }, 700);
+    });
+    box.append(ta);
+    if (focusComment === c.id) { focusComment = null; setTimeout(() => ta.focus({ preventScroll: true }), 0); }
+  }
+  box.append(el("span", { class: "status", id: "save-" + c.id, "aria-live": "polite" }, statusText(c.id)));
+  return box;
+}
+
+function statusText(cid) {
+  if (!voterName && (pending || answered(mine[cid]))) return "Enter your name at the top to save your answers.";
+  return answered(mine[cid]) ? "Answer saved. You can still change it." : "Answer both questions.";
+}
+function setStatus(cid, text) { const s = $("#save-" + cid); if (s) s.textContent = text; }
+
+function fmtDate(s) { const [y, m, d] = s.split("-"); return `${d}.${m}.${y}`; }
+
+function go(id) {
+  current = id;
+  try { history.replaceState(null, "", "#c" + id); } catch (e) {}
+  render();
+  window.scrollTo({ top: 0 });
+}
+
+function render() {
+  renderTabs();
+  const c = DATA.find(x => x.id === current) || DATA[0];
+  current = c.id;
+  $("#view").replaceChildren(renderClient(c));
+}
+
+function setAnswer(cid, patch) {
+  const prev = mine[cid] || {};
+  mine[cid] = { send: prev.send || null, better: prev.better || null, comment: prev.comment || "", ...patch };
+  if (!voterName) focusComment = null;  // the name field needs the focus first
+  if ("send" in patch || "better" in patch) $("#view").querySelector(".decide")?.replaceWith(renderDecision(DATA.find(x => x.id === cid)));
+  if (!voterName) {
+    pending = true;
+    setStatus(cid, statusText(cid));
+    const input = $("#voter-name");
+    if (input) { input.classList.add("need"); input.focus({ preventScroll: true }); input.scrollIntoView({ block: "center", behavior: "smooth" }); }
+    return;
+  }
+  persist(cid);
+}
+
+function persist(cid) {
+  setStatus(cid, "Saving…");
+  const body = JSON.stringify({ voterId, name: voterName, answers: mine });
+  saving = saving.then(async () => {
+    const res = await fetch("/api/vote", { method: "POST", headers: { "Content-Type": "application/json" }, body });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || "HTTP " + res.status);
+    pending = false;
+    setStatus(cid, statusText(cid));
+    renderTabs();
+  }).catch(() => setStatus(cid, "Not saved. Check your connection and choose your answer again."));
+}
+
+async function loadMine() {
+  try {
+    const res = await fetch("/api/vote?voterId=" + encodeURIComponent(voterId));
+    if (!res.ok) return;
+    const data = await res.json();
+    if (Object.keys(mine).length) return;  // the voter already started answering
+    mine = data.answers || {};
+    if (!voterName && data.name) { voterName = data.name; store.set("setReview.name", voterName); renderName(); }
+    render();
+  } catch (e) {}
+}
+
+const h = location.hash.slice(1);
+current = (DATA.find(c => "c" + c.id === h) || DATA[0]).id;
+renderName();
+render();
+loadMine();
+</script>
+</body>
+</html>
